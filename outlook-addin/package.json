@@ -1,0 +1,11 @@
+{
+  "name": "email-to-vcard-outlook-addin",
+  "version": "1.0.0",
+  "description": "Outlook Add-in pour créer des vCards depuis les emails",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

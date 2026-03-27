@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Email to vCard</title>
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <link rel="stylesheet" href="taskpane.css"/>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="3" width="20" height="18" rx="2"/>
+        <circle cx="9" cy="10" r="2.5"/>
+        <path d="M5 17c0-2 2-3.5 4-3.5s4 1.5 4 3.5"/>
+        <line x1="16" y1="9" x2="20" y2="9"/>
+        <line x1="16" y1="13" x2="20" y2="13"/>
+      </svg>
+      <h1>Email to vCard</h1>
+    </header>
+
+    <!-- Loading state -->
+    <div id="loading" class="state-view">
+      <div class="spinner"></div>
+      <p>Extraction des informations...</p>
+    </div>
+
+    <!-- Error state -->
+    <div id="error" class="state-view hidden">
+      <p class="error-text" id="error-message">Impossible de lire cet email.</p>
+      <button class="btn btn-secondary" onclick="extractContact()">Réessayer</button>
+    </div>
+
+    <!-- Form -->
+    <form id="contact-form" class="hidden">
+      <div class="field">
+        <label for="f-name">Nom</label>
+        <input type="text" id="f-name" placeholder="Jean Dupont"/>
+      </div>
+      <div class="field">
+        <label for="f-email">Email</label>
+        <input type="email" id="f-email" placeholder="jean@example.com"/>
+      </div>
+      <div class="field">
+        <label for="f-phone">Téléphone</label>
+        <input type="tel" id="f-phone" placeholder="+33 1 23 45 67 89"/>
+      </div>
+      <div class="field">
+        <label for="f-mobile">Mobile</label>
+        <input type="tel" id="f-mobile" placeholder="+33 6 12 34 56 78"/>
+      </div>
+      <div class="field">
+        <label for="f-company">Société</label>
+        <input type="text" id="f-company" placeholder="Acme Corp"/>
+      </div>
+      <div class="field">
+        <label for="f-title">Fonction</label>
+        <input type="text" id="f-title" placeholder="Directeur Commercial"/>
+      </div>
+      <div class="field">
+        <label for="f-address">Adresse</label>
+        <input type="text" id="f-address" placeholder="12 rue de la Paix, 75002 Paris"/>
+      </div>
+      <div class="field">
+        <label for="f-website">Site web</label>
+        <input type="url" id="f-website" placeholder="https://example.com"/>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn btn-primary" id="btn-download">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Télécharger .vcf
+        </button>
+        <button type="button" class="btn btn-secondary" id="btn-copy">
+          Copier vCard
+        </button>
+      </div>
+
+      <div id="toast" class="toast hidden">Contact téléchargé !</div>
+    </form>
+  </div>
+
+  <script src="signature-parser.js"></script>
+  <script src="vcard-generator.js"></script>
+  <script src="taskpane.js"></script>
+</body>
+</html>
