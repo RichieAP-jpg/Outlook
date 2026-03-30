@@ -20,8 +20,6 @@
 
   // Button icon
   const ICON_URL = chrome.runtime.getURL('icons/button-icon.png');
-  const FALLBACK_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="vcard-btn-icon-svg"><rect x="2" y="3" width="20" height="18" rx="2"/><circle cx="9" cy="10" r="2.5"/><path d="M5 17c0-2 2-3.5 4-3.5s4 1.5 4 3.5"/><line x1="16" y1="9" x2="20" y2="9"/><line x1="16" y1="13" x2="20" y2="13"/></svg>`;
-  const BUTTON_ICON_HTML = `<img src="${ICON_URL}" alt="vCard" class="vcard-btn-icon" onerror="this.outerHTML=\`${FALLBACK_SVG}\`"/>`;
 
   /**
    * Create the floating vCard button.
@@ -30,7 +28,17 @@
     const btn = document.createElement('button');
     btn.id = BUTTON_ID;
     btn.className = 'vcard-btn vcard-btn--floating';
-    btn.innerHTML = `${BUTTON_ICON_HTML} <span>Créer vCard</span>`;
+
+    const img = document.createElement('img');
+    img.src = ICON_URL;
+    img.alt = '';
+    img.className = 'vcard-btn-icon';
+    btn.appendChild(img);
+
+    const span = document.createElement('span');
+    span.textContent = 'Créer vCard';
+    btn.appendChild(span);
+
     btn.title = 'Créer une fiche contact vCard depuis cet email';
     btn.addEventListener('click', handleClick);
     return btn;
@@ -67,7 +75,7 @@
     }
 
     modal.innerHTML = `
-      <h3>${BUTTON_ICON_HTML} Créer un contact vCard</h3>
+      <h3>Créer un contact vCard</h3>
       ${fieldsHtml}
       <div class="vcard-modal-actions">
         <button class="vcard-btn-cancel">Annuler</button>
@@ -77,6 +85,12 @@
 
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
+
+    // Close on Escape key
+    const onEscape = (e) => {
+      if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onEscape); }
+    };
+    document.addEventListener('keydown', onEscape);
 
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) overlay.remove();
@@ -124,11 +138,9 @@
 
       console.log('[vCard Extension] Extracted:', contact);
 
-      // Always show the modal, even if empty — user can fill in manually
       showPreviewModal(contact);
     } catch (err) {
       console.error('[vCard Extension]', err);
-      // Show modal anyway with empty fields so user can fill manually
       showPreviewModal({
         name: '', email: '', phone: '', mobile: '',
         company: '', title: '', address: '', website: ''
@@ -167,7 +179,6 @@
     console.log('[vCard Extension] Button injected');
   }
 
-  // Inject as soon as possible
   if (document.body) {
     injectButton();
   } else {

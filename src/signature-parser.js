@@ -24,103 +24,71 @@ const SignatureParser = {
     const text = this._htmlToText(signatureHtml);
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
 
-    // Extract email (may differ from sender)
+    console.log('[vCard Parser] Lines:', lines);
+
+    // Extract email from signature (may differ from sender)
     const emailMatch = text.match(/[\w.+-]+@[\w.-]+\.\w{2,}/);
     if (emailMatch) {
       result.email = emailMatch[0];
     }
 
-    // Extract phone numbers
-    const phonePatterns = [
-      /(?:t[eé]l|phone|tel|ph|fax)\s*[.:]\s*([+\d\s().-]{7,})/i,
-      /(?:mobile|mob|cell|portable|gsm)\s*[.:]\s*([+\d\s().-]{7,})/i,
-      /(\+?\d[\d\s().-]{6,}\d)/
-    ];
-
-    const mobileKeywords = /mobile|mob|cell|portable|gsm/i;
-
+    // Extract phone numbers — detect "M:" or "T:" prefixes too
     for (const line of lines) {
-      for (const pattern of phonePatterns) {
-        const match = line.match(pattern);
-        if (match) {
-          const number = match[1] || match[0];
-          const cleaned = number.replace(/[^\d+() .-]/g, '').trim();
-          if (cleaned.length >= 7) {
-            if (mobileKeywords.test(line)) {
-              if (!result.mobile) result.mobile = cleaned;
-            } else {
-              if (!result.phone) result.phone = cleaned;
-            }
+      // Mobile patterns: "M:", "M :", "Mobile:", "Mob:", "Cell:", "Portable:", "+33 6..."
+      const mobileMatch = line.match(/(?:^M\s*[.:]\s*|(?:mobile|mob|cell|portable|gsm)\s*[.:]\s*)([+\d\s().-]{7,})/i);
+      if (mobileMatch && !result.mobile) {
+        result.mobile = mobileMatch[1].replace(/[^\d+() .-]/g, '').trim();
+        continue;
+      }
+
+      // Phone patterns: "T:", "Tel:", "Phone:", "Ph:", "Tél:"
+      const phoneMatch = line.match(/(?:^T\s*[.:]\s*|(?:t[eé]l|phone|tel|ph)\s*[.:]\s*)([+\d\s().-]{7,})/i);
+      if (phoneMatch && !result.phone) {
+        result.phone = phoneMatch[1].replace(/[^\d+() .-]/g, '').trim();
+        continue;
+      }
+
+      // Generic phone number on its own line (not already captured)
+      if (!result.phone && !result.mobile) {
+        const genericMatch = line.match(/^[+]?\d[\d\s().-]{6,}\d$/);
+        if (genericMatch) {
+          // If starts with +33 6 or +33 7 → mobile, else phone
+          if (/\+?33\s*[67]|^0[67]/.test(line)) {
+            result.mobile = line.trim();
+          } else {
+            result.phone = line.trim();
           }
         }
       }
     }
 
-    // Extract website
-    const urlMatch = text.match(/(?:https?:\/\/)?(?:www\.)?([a-zA-Z0-9-]+(?:\.[a-zA-Z]{2,})+(?:\/\S*)?)/i);
+    // Extract website — must contain "www." or be an explicit URL, NOT an email
+    const urlMatch = text.match(/(?:https?:\/\/)?www\.[a-zA-Z0-9-]+(?:\.[a-zA-Z]{2,})+(?:\/\S*)?/i);
     if (urlMatch) {
       let url = urlMatch[0];
-      // Exclude email domains
-      if (!url.includes('@')) {
-        if (!url.startsWith('http')) url = 'https://' + url;
-        result.website = url;
+      if (!url.startsWith('http')) url = 'https://' + url;
+      result.website = url;
+    } else {
+      // Look for explicit http(s) URLs
+      const httpMatch = text.match(/https?:\/\/[a-zA-Z0-9-]+(?:\.[a-zA-Z]{2,})+(?:\/\S*)?/i);
+      if (httpMatch && !httpMatch[0].includes('@')) {
+        result.website = httpMatch[0];
       }
     }
 
-    // Extract company and title from first lines (common signature format)
-    // Usually: Name\nTitle\nCompany or Name\nTitle | Company
-    if (lines.length >= 2) {
-      // First line often has the name (if different from sender name)
-      const firstLine = lines[0];
-      if (!this._looksLikeContactInfo(firstLine) && firstLine.length < 60) {
-        // Could be the name
-        if (!result.name || result.name === fallbackEmail) {
-          result.name = firstLine;
-        }
-      }
+    // Extract name, title, company from signature structure
+    // Typical format:
+    //   Charles Petracco     ← name (same as sender, skip)
+    //   Principal            ← title
+    //   L.E.K. Consulting    ← company
+    //   2, rue Paul...       ← address
+    this._extractNameTitleCompany(lines, result, fallbackName);
 
-      // Look for title/company patterns
-      for (let i = 0; i < Math.min(lines.length, 6); i++) {
-        const line = lines[i];
-
-        // Skip lines that are clearly contact info
-        if (this._looksLikeContactInfo(line)) continue;
-
-        // Pipe or dash separator: "Title | Company" or "Title - Company"
-        const sepMatch = line.match(/^(.+?)\s*[|–—-]\s*(.+)$/);
-        if (sepMatch && !result.title && sepMatch[1].length < 50 && sepMatch[2].length < 50) {
-          result.title = sepMatch[1].trim();
-          result.company = sepMatch[2].trim();
-          continue;
-        }
-
-        // Common title keywords
-        if (!result.title && /^(directeur|director|manager|ingénieur|engineer|consultant|ceo|cto|cfo|vp|chef|head|lead|président|president|fondateur|founder|responsable|associate|partner|analyst|developer|designer)/i.test(line) && line.length < 60) {
-          result.title = line;
-          continue;
-        }
-
-        // Company indicators
-        if (!result.company && /(?:sarl|sas|sa\b|gmbh|ltd|llc|inc|corp|group|cabinet|agence|agency)/i.test(line) && line.length < 60) {
-          result.company = line;
-        }
-      }
-    }
-
-    // Extract address - look for patterns with numbers, street keywords
-    const addressPatterns = [
-      /\d+[\s,]+(?:rue|avenue|av\.|boulevard|blvd|street|st\.|road|rd\.|place|allée|chemin|impasse|route)[^,\n]*/i,
-      /(?:bp|boîte postale|po box)\s*\d+/i,
-      /\d{4,5}\s+[A-Za-zÀ-ÿ\s-]+(?:cedex)?/i  // Postal code + city
-    ];
-
+    // Extract address
     const addressParts = [];
     for (const line of lines) {
-      for (const pattern of addressPatterns) {
-        if (pattern.test(line) && line.length < 100) {
-          addressParts.push(line);
-          break;
-        }
+      if (this._looksLikeAddress(line)) {
+        addressParts.push(line);
       }
     }
     if (addressParts.length > 0) {
@@ -130,22 +98,117 @@ const SignatureParser = {
     return result;
   },
 
+  /**
+   * Extract name, title and company from the first lines of the signature.
+   */
+  _extractNameTitleCompany(lines, result, fallbackName) {
+    // Find signature start: look for the sender name in the lines
+    let sigStartIndex = -1;
+
+    // The signature usually starts with the person's name
+    if (fallbackName) {
+      const nameLower = fallbackName.toLowerCase();
+      for (let i = 0; i < lines.length; i++) {
+        const lineLower = lines[i].toLowerCase();
+        // Check if line contains the sender's name (or vice versa)
+        if (lineLower.includes(nameLower) || nameLower.includes(lineLower)) {
+          sigStartIndex = i;
+          break;
+        }
+        // Check first/last name match
+        const nameParts = fallbackName.split(/\s+/);
+        if (nameParts.length >= 2 && nameParts.every(p => lineLower.includes(p.toLowerCase()))) {
+          sigStartIndex = i;
+          break;
+        }
+      }
+    }
+
+    // If we found the name line, look at the next lines for title/company
+    if (sigStartIndex >= 0) {
+      for (let i = sigStartIndex + 1; i < Math.min(lines.length, sigStartIndex + 5); i++) {
+        const line = lines[i];
+        if (!line || this._looksLikeContactInfo(line) || this._looksLikeAddress(line)) continue;
+        if (line.length > 60) continue;
+
+        // Pipe/dash separator: "Title | Company"
+        const sepMatch = line.match(/^(.+?)\s*[|–—]\s*(.+)$/);
+        if (sepMatch && !result.title) {
+          result.title = sepMatch[1].trim();
+          result.company = sepMatch[2].trim();
+          continue;
+        }
+
+        // First non-contact line after name = title
+        if (!result.title) {
+          result.title = line;
+          continue;
+        }
+
+        // Second non-contact line = company
+        if (!result.company) {
+          result.company = line;
+          break;
+        }
+      }
+    } else {
+      // Fallback: scan first lines for title/company keywords
+      for (let i = 0; i < Math.min(lines.length, 8); i++) {
+        const line = lines[i];
+        if (this._looksLikeContactInfo(line) || this._looksLikeAddress(line)) continue;
+        if (line.length > 60) continue;
+
+        // Skip greetings
+        if (this._looksLikeGreeting(line)) continue;
+
+        // Title keywords
+        if (!result.title && this._looksLikeTitle(line)) {
+          result.title = line;
+          continue;
+        }
+
+        // Company keywords
+        if (!result.company && this._looksLikeCompany(line)) {
+          result.company = line;
+        }
+      }
+    }
+  },
+
+  _looksLikeGreeting(line) {
+    return /^(hello|hi|bonjour|dear|cher|chère|bonsoir|salut|hey)\b/i.test(line) ||
+           /^(bonne|cordialement|regards|best|merci|thank)/i.test(line);
+  },
+
+  _looksLikeTitle(line) {
+    return /^(directeur|director|manager|ingénieur|engineer|consultant|ceo|cto|cfo|coo|vp|chef|head|lead|président|president|fondateur|founder|responsable|associate|partner|analyst|developer|designer|principal|senior|junior|vice|assistant|gérant|avocat|architecte|comptable)/i.test(line);
+  },
+
+  _looksLikeCompany(line) {
+    return /(?:sarl|sas|sa\b|sasu|gmbh|ltd|llc|inc|corp|group|cabinet|agence|agency|consulting|conseil|partners|&\s*(?:co|cie)|s\.?a\.?s|s\.?a\.?r\.?l)/i.test(line);
+  },
+
   _looksLikeContactInfo(line) {
     return /[@]/.test(line) ||
-           /(?:tel|phone|fax|mobile|www\.|http)/i.test(line) ||
+           /(?:^T\s*[.:]|^M\s*[.:]|tel|phone|fax|mobile|www\.|http)/i.test(line) ||
            /^[+\d\s().-]{7,}$/.test(line);
   },
 
-  _htmlToText(html) {
-    const div = document.createElement('div');
-    div.innerHTML = html;
+  _looksLikeAddress(line) {
+    return /\d+[\s,]+(?:rue|avenue|av\.|boulevard|blvd|street|st\.|road|rd\.|place|allée|chemin|impasse|route)/i.test(line) ||
+           /(?:bp|boîte postale|po box)\s*\d+/i.test(line) ||
+           (/\d{4,5}\s+[A-Za-z\u00C0-\u024F]/.test(line) && line.length < 80);
+  },
 
-    // Replace <br> and block elements with newlines
-    div.querySelectorAll('br').forEach(el => el.replaceWith('\n'));
-    div.querySelectorAll('p, div, tr, li').forEach(el => {
+  _htmlToText(html) {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const body = doc.body;
+
+    body.querySelectorAll('br').forEach(el => el.replaceWith('\n'));
+    body.querySelectorAll('p, div, tr, li').forEach(el => {
       el.prepend(document.createTextNode('\n'));
     });
 
-    return div.textContent || div.innerText || '';
+    return body.textContent || body.innerText || '';
   }
 };
