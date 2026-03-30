@@ -40,28 +40,21 @@ function handleRequest(req, res) {
   });
 }
 
-/**
- * Generate self-signed cert using Node.js crypto.generateCertificate (Node 21+)
- * or fallback to selfsigned package.
- */
-function getCerts() {
+async function getCerts() {
   const certsDir = path.join(__dirname, 'certs');
   const certPath = path.join(certsDir, 'server.crt');
   const keyPath = path.join(certsDir, 'server.key');
 
-  // Delete old broken certs if they exist
-  if (fs.existsSync(certPath)) {
+  // Try existing certs
+  if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
     try {
-      // Test if existing cert is valid
-      crypto.createSecureContext({
-        cert: fs.readFileSync(certPath),
-        key: fs.readFileSync(keyPath)
-      });
+      const cert = fs.readFileSync(certPath);
+      const key = fs.readFileSync(keyPath);
+      crypto.createSecureContext({ cert, key });
       console.log('Using existing SSL certificates.');
-      return { cert: fs.readFileSync(certPath), key: fs.readFileSync(keyPath) };
+      return { cert, key };
     } catch (e) {
-      // Cert is broken, regenerate
-      console.log('Existing certs are invalid, regenerating...');
+      console.log('Existing certs invalid, regenerating...');
       fs.unlinkSync(certPath);
       fs.unlinkSync(keyPath);
     }
@@ -73,93 +66,37 @@ function getCerts() {
 
   console.log('Generating SSL certificates...');
 
-  // Method 1: Try Node.js built-in generateKeyPair + X509 (Node 20+)
-  try {
-    const { privateKey, publicKey } = crypto.generateKeyPairSync('rsa', {
-      modulusLength: 2048,
-      publicKeyEncoding: { type: 'spki', format: 'pem' },
-      privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
-    });
+  // Generate with selfsigned package (v5 returns a Promise)
+  const selfsigned = require('selfsigned');
+  const pems = await selfsigned.generate(
+    [{ name: 'commonName', value: 'localhost' }],
+    { days: 365, keySize: 2048, algorithm: 'sha256' }
+  );
 
-    // Use selfsigned if available
-    try {
-      const selfsigned = require('selfsigned');
-      const pems = selfsigned.generate(
-        [{ name: 'commonName', value: 'localhost' }],
-        { keySize: 2048, days: 365, algorithm: 'sha256' }
-      );
-      fs.writeFileSync(keyPath, pems.private);
-      fs.writeFileSync(certPath, pems.cert);
+  fs.writeFileSync(keyPath, pems.private);
+  fs.writeFileSync(certPath, pems.cert);
+  console.log('SSL certificates generated!');
 
-      // Verify the cert works
-      crypto.createSecureContext({ cert: pems.cert, key: pems.private });
-      console.log('SSL certificates generated with selfsigned!');
-      return { cert: pems.cert, key: pems.private };
-    } catch (e) {
-      // selfsigned failed or not installed
-      console.log('selfsigned package failed:', e.message);
-    }
-  } catch (e) {
-    console.log('Key generation failed:', e.message);
-  }
-
-  // Method 2: Use openssl CLI if available
-  try {
-    const { execSync } = require('child_process');
-    execSync(
-      `openssl req -x509 -newkey rsa:2048 -keyout "${keyPath}" -out "${certPath}" -days 365 -nodes -subj "/CN=localhost"`,
-      { stdio: 'pipe' }
-    );
-    console.log('SSL certificates generated with openssl!');
-    return { cert: fs.readFileSync(certPath), key: fs.readFileSync(keyPath) };
-  } catch (e) {
-    // openssl not available
-  }
-
-  // Method 3: Use powershell to generate cert (Windows)
-  try {
-    const { execSync } = require('child_process');
-    // Generate with PowerShell's New-SelfSignedCertificate
-    const script = `
-      $cert = New-SelfSignedCertificate -DnsName "localhost" -CertStoreLocation "Cert:\\CurrentUser\\My" -NotAfter (Get-Date).AddYears(1)
-      $pwd = ConvertTo-SecureString -String "temp123" -Force -AsPlainText
-      $pfxPath = "${certsDir.replace(/\\/g, '\\\\')}\\\\temp.pfx"
-      Export-PfxCertificate -Cert $cert -FilePath $pfxPath -Password $pwd | Out-Null
-      Write-Output $pfxPath
-    `;
-    const pfxPath = path.join(certsDir, 'temp.pfx');
-    execSync(`powershell -Command "${script.replace(/\n/g, '; ')}"`, { stdio: 'pipe' });
-
-    // Convert PFX to PEM using Node crypto
-    const pfxData = fs.readFileSync(pfxPath);
-    // Node can use PFX directly
-    fs.unlinkSync(pfxPath);
-    console.log('SSL certificates generated with PowerShell!');
-    return { pfx: pfxData, passphrase: 'temp123' };
-  } catch (e) {
-    // PowerShell method failed
-  }
-
-  console.error('');
-  console.error('ERROR: Could not generate SSL certificates.');
-  console.error('Please install openssl or run as administrator.');
-  process.exit(1);
+  return { cert: pems.cert, key: pems.private };
 }
 
 // Start server
-const certs = getCerts();
-
-https.createServer(certs, handleRequest).listen(PORT, () => {
-  console.log('');
-  console.log('===========================================');
-  console.log('  Email to vCard - Outlook Add-in Server');
-  console.log('===========================================');
-  console.log('');
-  console.log('  HTTPS server: https://localhost:' + PORT);
-  console.log('  Taskpane:     https://localhost:' + PORT + '/taskpane.html');
-  console.log('');
-  console.log('  Le serveur est pret !');
-  console.log('  Chargez manifest.xml dans Outlook.');
-  console.log('  Ne fermez pas cette fenetre.');
-  console.log('');
+getCerts().then(({ cert, key }) => {
+  https.createServer({ cert, key }, handleRequest).listen(PORT, () => {
+    console.log('');
+    console.log('===========================================');
+    console.log('  Email to vCard - Outlook Add-in Server');
+    console.log('===========================================');
+    console.log('');
+    console.log('  HTTPS server: https://localhost:' + PORT);
+    console.log('  Taskpane:     https://localhost:' + PORT + '/taskpane.html');
+    console.log('');
+    console.log('  Le serveur est pret !');
+    console.log('  Chargez manifest.xml dans Outlook.');
+    console.log('  Ne fermez pas cette fenetre.');
+    console.log('');
+  });
+}).catch((err) => {
+  console.error('Failed to start server:', err.message);
+  process.exit(1);
 });
