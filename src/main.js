@@ -17,9 +17,10 @@
     return; // Not a supported email client
   }
 
-  // Button icon - uses custom image from icons/button-icon.png
+  // Button icon - custom image with SVG fallback
   const ICON_URL = chrome.runtime.getURL('icons/button-icon.png');
-  const BUTTON_ICON_HTML = `<img src="${ICON_URL}" alt="vCard" class="vcard-btn-icon"/>`;
+  const FALLBACK_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="vcard-btn-icon-svg"><rect x="2" y="3" width="20" height="18" rx="2"/><circle cx="9" cy="10" r="2.5"/><path d="M5 17c0-2 2-3.5 4-3.5s4 1.5 4 3.5"/><line x1="16" y1="9" x2="20" y2="9"/><line x1="16" y1="13" x2="20" y2="13"/></svg>`;
+  const BUTTON_ICON_HTML = `<img src="${ICON_URL}" alt="vCard" class="vcard-btn-icon" onerror="this.outerHTML=\`${FALLBACK_SVG}\`"/>`;
 
   /**
    * Create the vCard button element.

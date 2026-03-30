@@ -43,7 +43,14 @@
   flex-shrink: 0;
 }
 
-.vcard-modal h3 .vcard-btn-icon {
+.vcard-btn-icon-svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.vcard-modal h3 .vcard-btn-icon,
+.vcard-modal h3 .vcard-btn-icon-svg {
   width: 28px;
   height: 28px;
   vertical-align: middle;
