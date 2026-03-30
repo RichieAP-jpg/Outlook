@@ -15,79 +15,72 @@ const OutlookExtractor = {
     let name = '';
     let email = '';
 
-    // Strategy 1: Look for sender name in the reading pane header
-    // Outlook shows "Name <email>" or just "Name" near the top
-    const senderSelectors = [
-      '.lpc-hoverTarget',                // Live Persona Card hover target
-      '[data-testid="SenderPersona"]',   // New Outlook
-      '[role="heading"] span',           // Heading area
-      '.IjQyB',                          // Sender name class
-      '.OZZZK',                          // Alternative sender class
-    ];
+    // Strategy 1: Find the FIRST mailto: link in the reading pane
+    // In Outlook, the sender name/email appears as a mailto link at the top of the email
+    const readingPane = document.querySelector('[role="main"]') ||
+                        document.querySelector('[data-app-section="ReadingPane"]') ||
+                        document.body;
 
-    for (const sel of senderSelectors) {
-      const el = document.querySelector(sel);
-      if (el) {
-        const text = el.textContent.trim();
-        if (text && text.length < 80 && !text.includes('@')) {
-          name = text;
+    // Look for the sender line: "Name <email>" shown near the top
+    // The sender's mailto link is typically one of the first in the reading pane
+    const mailtoLinks = readingPane.querySelectorAll('a[href^="mailto:"]');
+    for (const link of mailtoLinks) {
+      const href = link.getAttribute('href') || '';
+      const mailto = href.replace('mailto:', '').split('?')[0].trim();
+      if (mailto.includes('@')) {
+        email = mailto;
+        // The link text might be the name or the email
+        const linkText = link.textContent.trim();
+        if (linkText && !linkText.includes('@') && linkText.length < 60) {
+          name = linkText;
+        }
+        break;
+      }
+    }
+
+    // Strategy 2: Look for "From:" / "De:" pattern or sender persona elements
+    if (!email) {
+      const spans = readingPane.querySelectorAll('span');
+      for (const span of spans) {
+        const text = span.textContent.trim();
+        // Match email pattern in a small span (likely a sender display)
+        if (/^[\w.+-]+@[\w.-]+\.\w{2,}$/.test(text) && text.length < 80) {
+          email = text;
+          break;
+        }
+        // "Name <email>" pattern
+        const angleMatch = text.match(/^([^<]+)<([\w.+-]+@[\w.-]+\.\w{2,})>$/);
+        if (angleMatch) {
+          name = angleMatch[1].trim();
+          email = angleMatch[2];
           break;
         }
       }
     }
 
-    // Strategy 2: Find email from "Name <email@domain>" header text
-    const headerEl = document.querySelector('[role="main"]');
-    if (headerEl) {
-      // Look for mailto links
-      const mailtoLinks = headerEl.querySelectorAll('a[href^="mailto:"]');
-      for (const link of mailtoLinks) {
-        const href = link.getAttribute('href') || '';
-        const mailto = href.replace('mailto:', '').split('?')[0];
-        if (mailto.includes('@')) {
-          email = mailto;
-          if (!name) {
-            const linkText = link.textContent.trim();
-            if (linkText && !linkText.includes('@')) {
-              name = linkText;
-            }
-          }
-          break;
-        }
-      }
-
-      // Fallback: search for email pattern in header spans
-      if (!email) {
-        const spans = headerEl.querySelectorAll('span');
-        for (const span of spans) {
-          const text = span.textContent.trim();
-          if (/^[\w.+-]+@[\w.-]+\.\w{2,}$/.test(text)) {
-            email = text;
-            break;
-          }
-          // "Name <email>" pattern
-          const angleMatch = text.match(/<([\w.+-]+@[\w.-]+\.\w{2,})>/);
-          if (angleMatch) {
-            email = angleMatch[1];
-            if (!name) name = text.replace(/<.*>/, '').trim();
-            break;
-          }
-        }
-      }
-    }
-
-    // Strategy 3: Extract name from the email header display
-    // Look for the sender name shown as "Charles Petracco<C.Petracco@lek.com>"
-    if (!name && email) {
-      const allEls = document.querySelectorAll('button, span, div');
+    // Strategy 3: If we found email but no name, try to derive from email
+    if (email && !name) {
+      // Try to find a span/button near the email that contains a name
+      const allEls = readingPane.querySelectorAll('span, button');
       for (const el of allEls) {
         const text = el.textContent.trim();
-        if (text.includes(email) && text.length < 120) {
+        // Look for elements that contain the email and more text (like "Jordan Ohayon <johayon@...>")
+        if (text.includes(email) && text.length > email.length + 2 && text.length < 120) {
           const namePart = text.replace(email, '').replace(/[<>]/g, '').trim();
           if (namePart && namePart.length > 1 && namePart.length < 60) {
             name = namePart;
             break;
           }
+        }
+      }
+
+      // Last resort: derive name from email (johayon → J. Ohayon)
+      if (!name) {
+        const localPart = email.split('@')[0];
+        // Common patterns: j.ohayon, johayon, jordan.ohayon
+        const dotParts = localPart.split('.');
+        if (dotParts.length >= 2) {
+          name = dotParts.map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(' ');
         }
       }
     }
@@ -113,25 +106,24 @@ const OutlookExtractor = {
 
     const html = bodyEl.innerHTML;
 
-    // Look for the sign-off line and take everything after
+    // Look for common sign-off keywords and take everything after
     const signoffPatterns = [
-      /(?:charles|cordialement|regards|best regards|kind regards|bien [àa] vous|cdlt|sincèrement|bonne)[^<]*/i
-    ];
-
-    for (const pattern of signoffPatterns) {
-      const match = html.search(pattern);
-      if (match !== -1) {
-        return html.substring(match);
-      }
-    }
-
-    // Look for signature delimiters
-    const delimiterPatterns = [
+      /cordialement/i,
+      /regards/i,
+      /best regards/i,
+      /kind regards/i,
+      /bien [àa] vous/i,
+      /cdlt/i,
+      /sincèrement/i,
+      /bonne fin de/i,
+      /bonne journ/i,
+      /à bientôt/i,
+      /à très bientôt/i,
       /--\s*<br/i,
       /--\s*<\/div/i,
     ];
 
-    for (const pattern of delimiterPatterns) {
+    for (const pattern of signoffPatterns) {
       const match = html.search(pattern);
       if (match !== -1) {
         return html.substring(match);
@@ -148,11 +140,10 @@ const OutlookExtractor = {
   },
 
   getButtonContainer() {
-    return null; // We always use the floating button now
+    return null;
   },
 
   observe(callback) {
-    // Not used anymore since we inject immediately
     return null;
   }
 };

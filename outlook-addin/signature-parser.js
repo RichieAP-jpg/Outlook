@@ -20,39 +20,34 @@ const SignatureParser = {
 
     if (!signatureHtml) return result;
 
-    // Convert HTML to text while preserving line breaks
     const text = this._htmlToText(signatureHtml);
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
 
     console.log('[vCard Parser] Lines:', lines);
 
-    // Extract email from signature (may differ from sender)
+    // Extract email from signature
     const emailMatch = text.match(/[\w.+-]+@[\w.-]+\.\w{2,}/);
     if (emailMatch) {
       result.email = emailMatch[0];
     }
 
-    // Extract phone numbers — detect "M:" or "T:" prefixes too
+    // Extract phone numbers
     for (const line of lines) {
-      // Mobile patterns: "M:", "M :", "Mobile:", "Mob:", "Cell:", "Portable:", "+33 6..."
       const mobileMatch = line.match(/(?:^M\s*[.:]\s*|(?:mobile|mob|cell|portable|gsm)\s*[.:]\s*)([+\d\s().-]{7,})/i);
       if (mobileMatch && !result.mobile) {
         result.mobile = mobileMatch[1].replace(/[^\d+() .-]/g, '').trim();
         continue;
       }
 
-      // Phone patterns: "T:", "Tel:", "Phone:", "Ph:", "Tél:"
-      const phoneMatch = line.match(/(?:^T\s*[.:]\s*|(?:t[eé]l|phone|tel|ph)\s*[.:]\s*)([+\d\s().-]{7,})/i);
+      const phoneMatch = line.match(/(?:^T\s*[.:]\s*|(?:t[eé]l|phone|tel|ph|direct)\s*[.:]\s*)([+\d\s().-]{7,})/i);
       if (phoneMatch && !result.phone) {
         result.phone = phoneMatch[1].replace(/[^\d+() .-]/g, '').trim();
         continue;
       }
 
-      // Generic phone number on its own line (not already captured)
       if (!result.phone && !result.mobile) {
         const genericMatch = line.match(/^[+]?\d[\d\s().-]{6,}\d$/);
         if (genericMatch) {
-          // If starts with +33 6 or +33 7 → mobile, else phone
           if (/\+?33\s*[67]|^0[67]/.test(line)) {
             result.mobile = line.trim();
           } else {
@@ -62,14 +57,13 @@ const SignatureParser = {
       }
     }
 
-    // Extract website — must contain "www." or be an explicit URL, NOT an email
+    // Extract website — must contain "www." or explicit http URL
     const urlMatch = text.match(/(?:https?:\/\/)?www\.[a-zA-Z0-9-]+(?:\.[a-zA-Z]{2,})+(?:\/\S*)?/i);
     if (urlMatch) {
       let url = urlMatch[0];
       if (!url.startsWith('http')) url = 'https://' + url;
       result.website = url;
     } else {
-      // Look for explicit http(s) URLs
       const httpMatch = text.match(/https?:\/\/[a-zA-Z0-9-]+(?:\.[a-zA-Z]{2,})+(?:\/\S*)?/i);
       if (httpMatch && !httpMatch[0].includes('@')) {
         result.website = httpMatch[0];
@@ -77,11 +71,6 @@ const SignatureParser = {
     }
 
     // Extract name, title, company from signature structure
-    // Typical format:
-    //   Charles Petracco     ← name (same as sender, skip)
-    //   Principal            ← title
-    //   L.E.K. Consulting    ← company
-    //   2, rue Paul...       ← address
     this._extractNameTitleCompany(lines, result, fallbackName);
 
     // Extract address
@@ -102,20 +91,17 @@ const SignatureParser = {
    * Extract name, title and company from the first lines of the signature.
    */
   _extractNameTitleCompany(lines, result, fallbackName) {
-    // Find signature start: look for the sender name in the lines
     let sigStartIndex = -1;
 
-    // The signature usually starts with the person's name
-    if (fallbackName) {
+    // Try to find the sender's name in the signature lines
+    if (fallbackName && !this._looksLikeBadName(fallbackName)) {
       const nameLower = fallbackName.toLowerCase();
       for (let i = 0; i < lines.length; i++) {
         const lineLower = lines[i].toLowerCase();
-        // Check if line contains the sender's name (or vice versa)
         if (lineLower.includes(nameLower) || nameLower.includes(lineLower)) {
           sigStartIndex = i;
           break;
         }
-        // Check first/last name match
         const nameParts = fallbackName.split(/\s+/);
         if (nameParts.length >= 2 && nameParts.every(p => lineLower.includes(p.toLowerCase()))) {
           sigStartIndex = i;
@@ -124,16 +110,43 @@ const SignatureParser = {
       }
     }
 
-    // If we found the name line, look at the next lines for title/company
+    // If name from header didn't match, try to find the signature block
+    // by looking for a short name-like line followed by a title-like line
+    if (sigStartIndex < 0) {
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (this._looksLikeGreeting(line)) continue;
+        if (this._looksLikeContactInfo(line)) continue;
+        if (this._looksLikeAddress(line)) continue;
+        if (line.length > 40) continue;
+
+        // A name is typically 2-4 words, no special chars except hyphens/apostrophes
+        if (this._looksLikePersonName(line)) {
+          // Check if next line looks like a title or company
+          const nextLine = lines[i + 1] || '';
+          if (this._looksLikeTitle(nextLine) || this._looksLikeCompany(nextLine) ||
+              (nextLine.length < 50 && nextLine.length > 1 &&
+               !this._looksLikeContactInfo(nextLine) && !this._looksLikeAddress(nextLine) &&
+               !this._looksLikeGreeting(nextLine))) {
+            sigStartIndex = i;
+            result.name = line; // Override the bad name from the header
+            break;
+          }
+        }
+      }
+    }
+
+    // Extract title and company from lines after the name
     if (sigStartIndex >= 0) {
       for (let i = sigStartIndex + 1; i < Math.min(lines.length, sigStartIndex + 5); i++) {
         const line = lines[i];
         if (!line || this._looksLikeContactInfo(line) || this._looksLikeAddress(line)) continue;
         if (line.length > 60) continue;
+        if (this._looksLikeGreeting(line)) continue;
 
-        // Pipe/dash separator: "Title | Company"
+        // Pipe/dash separator: "Title | Company" or "Title - Company"
         const sepMatch = line.match(/^(.+?)\s*[|–—]\s*(.+)$/);
-        if (sepMatch && !result.title) {
+        if (sepMatch && !result.title && sepMatch[1].length < 50 && sepMatch[2].length < 50) {
           result.title = sepMatch[1].trim();
           result.company = sepMatch[2].trim();
           continue;
@@ -152,22 +165,18 @@ const SignatureParser = {
         }
       }
     } else {
-      // Fallback: scan first lines for title/company keywords
-      for (let i = 0; i < Math.min(lines.length, 8); i++) {
+      // Last resort fallback: scan for keyword matches
+      for (let i = 0; i < Math.min(lines.length, 10); i++) {
         const line = lines[i];
         if (this._looksLikeContactInfo(line) || this._looksLikeAddress(line)) continue;
         if (line.length > 60) continue;
-
-        // Skip greetings
         if (this._looksLikeGreeting(line)) continue;
 
-        // Title keywords
         if (!result.title && this._looksLikeTitle(line)) {
           result.title = line;
           continue;
         }
 
-        // Company keywords
         if (!result.company && this._looksLikeCompany(line)) {
           result.company = line;
         }
@@ -175,23 +184,50 @@ const SignatureParser = {
     }
   },
 
+  /**
+   * Check if a name looks wrong (like an email subject or conversation name).
+   */
+  _looksLikeBadName(name) {
+    return name.includes(' - ') ||  // "Lafitte - SPA" = subject line
+           name.includes('RE:') ||
+           name.includes('FW:') ||
+           name.includes('TR:') ||
+           name.length > 50 ||
+           /^\[/.test(name) ||       // "[EXTERNAL] ..."
+           /\d{4}/.test(name);       // Contains year = probably subject
+  },
+
+  /**
+   * Check if a line looks like a person's name (2-4 words, letters only).
+   */
+  _looksLikePersonName(line) {
+    // 2 to 5 words, mostly letters, may contain hyphens/apostrophes
+    const words = line.split(/\s+/);
+    if (words.length < 2 || words.length > 5) return false;
+    if (line.length > 40) return false;
+    // Should be mostly letters
+    return /^[A-Za-z\u00C0-\u024F][\w\u00C0-\u024F' -]+$/.test(line) &&
+           !/\d/.test(line);
+  },
+
   _looksLikeGreeting(line) {
-    return /^(hello|hi|bonjour|dear|cher|chère|bonsoir|salut|hey)\b/i.test(line) ||
-           /^(bonne|cordialement|regards|best|merci|thank)/i.test(line);
+    return /^(hello|hi|bonjour|dear|cher|ch[èe]re|bonsoir|salut|hey)\b/i.test(line) ||
+           /^(bonne|cordialement|regards|best|merci|thank|sent from)/i.test(line);
   },
 
   _looksLikeTitle(line) {
-    return /^(directeur|director|manager|ingénieur|engineer|consultant|ceo|cto|cfo|coo|vp|chef|head|lead|président|president|fondateur|founder|responsable|associate|partner|analyst|developer|designer|principal|senior|junior|vice|assistant|gérant|avocat|architecte|comptable)/i.test(line);
+    return /^(directeur|director|manager|ingénieur|engineer|consultant|ceo|cto|cfo|coo|vp|chef|head|lead|président|president|fondateur|founder|responsable|associate|partner|analyst|developer|designer|principal|senior|junior|vice|assistant|gérant|avocat|attorney|counsel|architect|comptable|auditeur|stagiaire|intern)/i.test(line);
   },
 
   _looksLikeCompany(line) {
-    return /(?:sarl|sas|sa\b|sasu|gmbh|ltd|llc|inc|corp|group|cabinet|agence|agency|consulting|conseil|partners|&\s*(?:co|cie)|s\.?a\.?s|s\.?a\.?r\.?l)/i.test(line);
+    return /(?:sarl|sas|sasu|sa\b|gmbh|ltd|llc|inc|corp|group|cabinet|agence|agency|consulting|conseil|partners|&\s*(?:co|cie)|s\.?a\.?s|s\.?a\.?r\.?l|avocats|law|legal|bank|capital|invest|tech|solutions)/i.test(line);
   },
 
   _looksLikeContactInfo(line) {
     return /[@]/.test(line) ||
-           /(?:^T\s*[.:]|^M\s*[.:]|tel|phone|fax|mobile|www\.|http)/i.test(line) ||
-           /^[+\d\s().-]{7,}$/.test(line);
+           /(?:^T\s*[.:]|^M\s*[.:]|^D\s*[.:]|tel|phone|fax|mobile|www\.|http)/i.test(line) ||
+           /^[+\d\s().-]{7,}$/.test(line) ||
+           /\|.*\|/.test(line); // "C.Petracco@lek.com | www.lek.com" style lines
   },
 
   _looksLikeAddress(line) {
