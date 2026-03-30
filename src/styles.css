@@ -35,6 +35,21 @@
   flex-shrink: 0;
 }
 
+.vcard-btn-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.vcard-modal h3 .vcard-btn-icon {
+  width: 28px;
+  height: 28px;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
 /* Success state */
 .vcard-btn--success {
   border-color: #34a853;

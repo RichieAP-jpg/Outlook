@@ -3,11 +3,11 @@
   "name": "Email to vCard",
   "version": "1.0.0",
   "description": "Create vCard contacts from email sender info and signatures in Gmail and Outlook Web",
-  "permissions": ["activeTab"],
+  "permissions": [],
   "icons": {
-    "16": "icons/icon16.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
+    "16": "icons/button-icon.png",
+    "48": "icons/button-icon.png",
+    "128": "icons/button-icon.png"
   },
   "content_scripts": [
     {
@@ -19,6 +19,17 @@
       ],
       "js": ["src/signature-parser.js", "src/vcard-generator.js", "src/content-gmail.js", "src/content-outlook.js", "src/main.js"],
       "css": ["src/styles.css"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/button-icon.png"],
+      "matches": [
+        "https://mail.google.com/*",
+        "https://outlook.live.com/*",
+        "https://outlook.office.com/*",
+        "https://outlook.office365.com/*"
+      ]
     }
   ]
 }

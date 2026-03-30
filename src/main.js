@@ -17,14 +17,9 @@
     return; // Not a supported email client
   }
 
-  // SVG icon for the contact/vCard button
-  const VCARD_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="2" y="3" width="20" height="18" rx="2"/>
-    <circle cx="9" cy="10" r="2.5"/>
-    <path d="M5 17c0-2 2-3.5 4-3.5s4 1.5 4 3.5"/>
-    <line x1="16" y1="9" x2="20" y2="9"/>
-    <line x1="16" y1="13" x2="20" y2="13"/>
-  </svg>`;
+  // Button icon - uses custom image from icons/button-icon.png
+  const ICON_URL = chrome.runtime.getURL('icons/button-icon.png');
+  const BUTTON_ICON_HTML = `<img src="${ICON_URL}" alt="vCard" class="vcard-btn-icon"/>`;
 
   /**
    * Create the vCard button element.
@@ -33,7 +28,7 @@
     const btn = document.createElement('button');
     btn.id = BUTTON_ID;
     btn.className = 'vcard-btn';
-    btn.innerHTML = `${VCARD_ICON} <span>vCard</span>`;
+    btn.innerHTML = `${BUTTON_ICON_HTML} <span>vCard</span>`;
     btn.title = 'Create a vCard contact from this email';
     btn.addEventListener('click', handleClick);
     return btn;
@@ -70,7 +65,7 @@
     }
 
     modal.innerHTML = `
-      <h3>${VCARD_ICON} Créer un contact vCard</h3>
+      <h3>${BUTTON_ICON_HTML} Créer un contact vCard</h3>
       ${fieldsHtml}
       <div class="vcard-modal-actions">
         <button class="vcard-btn-cancel">Annuler</button>
