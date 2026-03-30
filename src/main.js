@@ -6,7 +6,6 @@
 
   const BUTTON_ID = 'vcard-ext-btn';
   let currentExtractor = null;
-  let debounceTimer = null;
 
   // Determine which email client we're on
   if (GmailExtractor.isGmail()) {
@@ -14,40 +13,42 @@
   } else if (OutlookExtractor.isOutlook()) {
     currentExtractor = OutlookExtractor;
   } else {
-    return; // Not a supported email client
+    return;
   }
 
-  // Button icon - custom image with SVG fallback
+  console.log('[vCard Extension] Loaded on', location.hostname);
+
+  // Button icon
   const ICON_URL = chrome.runtime.getURL('icons/button-icon.png');
   const FALLBACK_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="vcard-btn-icon-svg"><rect x="2" y="3" width="20" height="18" rx="2"/><circle cx="9" cy="10" r="2.5"/><path d="M5 17c0-2 2-3.5 4-3.5s4 1.5 4 3.5"/><line x1="16" y1="9" x2="20" y2="9"/><line x1="16" y1="13" x2="20" y2="13"/></svg>`;
   const BUTTON_ICON_HTML = `<img src="${ICON_URL}" alt="vCard" class="vcard-btn-icon" onerror="this.outerHTML=\`${FALLBACK_SVG}\`"/>`;
 
   /**
-   * Create the vCard button element.
+   * Create the floating vCard button.
    */
   function createButton() {
     const btn = document.createElement('button');
     btn.id = BUTTON_ID;
-    btn.className = 'vcard-btn';
-    btn.innerHTML = `${BUTTON_ICON_HTML} <span>vCard</span>`;
-    btn.title = 'Create a vCard contact from this email';
+    btn.className = 'vcard-btn vcard-btn--floating';
+    btn.innerHTML = `${BUTTON_ICON_HTML} <span>Créer vCard</span>`;
+    btn.title = 'Créer une fiche contact vCard depuis cet email';
     btn.addEventListener('click', handleClick);
     return btn;
   }
 
   /**
-   * Show a preview modal with extracted info, allowing edits before download.
+   * Show a preview modal with extracted info.
    */
   function showPreviewModal(contact) {
     const fields = [
-      { key: 'name', label: 'Nom / Name' },
+      { key: 'name', label: 'Nom' },
       { key: 'email', label: 'Email' },
-      { key: 'phone', label: 'Téléphone / Phone' },
+      { key: 'phone', label: 'Téléphone' },
       { key: 'mobile', label: 'Mobile' },
-      { key: 'company', label: 'Société / Company' },
-      { key: 'title', label: 'Fonction / Title' },
-      { key: 'address', label: 'Adresse / Address' },
-      { key: 'website', label: 'Site web / Website' }
+      { key: 'company', label: 'Société' },
+      { key: 'title', label: 'Fonction' },
+      { key: 'address', label: 'Adresse' },
+      { key: 'website', label: 'Site web' }
     ];
 
     const overlay = document.createElement('div');
@@ -77,17 +78,14 @@
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
 
-    // Close on overlay click
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) overlay.remove();
     });
 
-    // Cancel button
     modal.querySelector('.vcard-btn-cancel').addEventListener('click', () => {
       overlay.remove();
     });
 
-    // Download button
     modal.querySelector('.vcard-btn-download').addEventListener('click', () => {
       const edited = {};
       for (const f of fields) {
@@ -96,14 +94,13 @@
       }
 
       const vcard = VCardGenerator.generate(edited);
-      const filename = (edited.name || 'contact').replace(/[^a-zA-Z0-9À-ÿ ]/g, '_') + '.vcf';
+      const filename = (edited.name || 'contact').replace(/[^a-zA-Z0-9\u00C0-\u024F ]/g, '_') + '.vcf';
       VCardGenerator.download(vcard, filename);
 
       overlay.remove();
       showToast('Contact téléchargé !');
     });
 
-    // Focus first input
     const firstInput = modal.querySelector('input');
     if (firstInput) firstInput.focus();
   }
@@ -115,24 +112,27 @@
     e.preventDefault();
     e.stopPropagation();
 
+    console.log('[vCard Extension] Button clicked');
+
     try {
       const { name, email } = currentExtractor.extractSenderInfo();
       const signatureHtml = currentExtractor.extractSignatureHtml();
       const contact = SignatureParser.parse(signatureHtml, name, email);
 
-      // Ensure we at least have the email
       if (!contact.email && email) contact.email = email;
       if (!contact.name && name) contact.name = name;
 
-      if (!contact.email && !contact.name) {
-        showToast('Impossible d\'extraire les informations du mail.');
-        return;
-      }
+      console.log('[vCard Extension] Extracted:', contact);
 
+      // Always show the modal, even if empty — user can fill in manually
       showPreviewModal(contact);
     } catch (err) {
       console.error('[vCard Extension]', err);
-      showToast('Erreur lors de l\'extraction.');
+      // Show modal anyway with empty fields so user can fill manually
+      showPreviewModal({
+        name: '', email: '', phone: '', mobile: '',
+        company: '', title: '', address: '', website: ''
+      });
     }
   }
 
@@ -155,58 +155,22 @@
     }, 3000);
   }
 
-  /**
-   * Inject the button into the page.
-   */
-  function injectButton() {
-    // Don't inject if already present
-    if (document.getElementById(BUTTON_ID)) return;
-
-    const container = currentExtractor.getButtonContainer();
-
-    if (container) {
-      const btn = createButton();
-      container.appendChild(btn);
-    } else {
-      // Fallback: floating button
-      const btn = createButton();
-      btn.classList.add('vcard-btn--floating');
-      document.body.appendChild(btn);
-    }
-  }
-
-  /**
-   * Remove existing button (for re-injection on navigation).
-   */
-  function removeButton() {
-    const existing = document.getElementById(BUTTON_ID);
-    if (existing) existing.remove();
-  }
-
-  /**
-   * Debounced check for email view changes.
-   */
-  function onMutation() {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-      const hasEmail = currentExtractor.extractSenderInfo().email ||
-                       currentExtractor.extractSenderInfo().name;
-      if (hasEmail) {
-        injectButton();
-      } else {
-        removeButton();
-      }
-    }, 500);
-  }
-
-  // Escape HTML attributes
   function escapeAttr(str) {
     return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
-  // Start observing
-  currentExtractor.observe(onMutation);
+  // Always inject the floating button immediately
+  function injectButton() {
+    if (document.getElementById(BUTTON_ID)) return;
+    const btn = createButton();
+    document.body.appendChild(btn);
+    console.log('[vCard Extension] Button injected');
+  }
 
-  // Initial check
-  setTimeout(onMutation, 1500);
+  // Inject as soon as possible
+  if (document.body) {
+    injectButton();
+  } else {
+    document.addEventListener('DOMContentLoaded', injectButton);
+  }
 })();
