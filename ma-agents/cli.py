@@ -29,6 +29,7 @@ import logging
 import sys
 
 from rich.console import Console
+from rich.panel import Panel
 from rich.table import Table
 
 from config import MAX_BUILDER_REVIEWER_LOOPS, MIN_REVIEW_SCORE, MAX_EXAMPLES
@@ -114,6 +115,43 @@ def cmd_list_types(_args):
     for dt in DocType:
         table.add_row(dt.value, type_descriptions.get(dt, ""))
     console.print(table)
+
+
+def cmd_update_pu(args):
+    """Run the daily PU update for a deal."""
+    from daily_runner import DailyRunner
+
+    keywords = args.keywords if args.keywords else [args.deal]
+    runner = DailyRunner(
+        deal=args.deal,
+        user_email=args.user_email,
+        deal_keywords=keywords,
+        hours=args.hours,
+        use_local=args.local,
+        local_emails_path=args.emails_file,
+    )
+    update = runner.run()
+    sys.exit(0 if update.pu_markdown else 1)
+
+
+def cmd_list_todos(args):
+    """List the current todos for a deal."""
+    from todo_manager import TodoManager
+
+    tm = TodoManager(args.deal)
+    console.print(tm.to_markdown(only_active=not args.all))
+
+
+def cmd_show_pu(args):
+    """Show the latest PU for a deal."""
+    from pu_agent import PUStore
+
+    store = PUStore(args.deal)
+    date, content = store.latest()
+    if not content:
+        console.print(f"[red]Aucun PU trouvé pour {args.deal}[/red]")
+        sys.exit(1)
+    console.print(Panel(content, title=f"PU {args.deal} — {date}", border_style="cyan"))
 
 
 def cmd_run_agent(args):
@@ -222,6 +260,27 @@ def main():
     p_run.add_argument("agent_file", help="Fichier agent JSON (nom ou chemin)")
     p_run.add_argument("-o", "--output", help="Fichier de sortie")
     p_run.set_defaults(func=cmd_run_agent)
+
+    # --- update-pu ---
+    p_pu = subparsers.add_parser("update-pu", help="Mise à jour quotidienne du PU (lit mails, met à jour to-do)")
+    p_pu.add_argument("deal", help="Nom / code du deal (ex: journey)")
+    p_pu.add_argument("--user-email", default="", help="Email de l'utilisateur Outlook")
+    p_pu.add_argument("--keywords", nargs="+", help="Mots-clés pour filtrer les mails (défaut: nom du deal)")
+    p_pu.add_argument("--hours", type=int, default=24, help="Fenêtre de lecture des mails (h)")
+    p_pu.add_argument("--local", action="store_true", help="Utiliser un fichier JSON local au lieu d'Outlook")
+    p_pu.add_argument("--emails-file", help="Chemin du fichier JSON de mails (mode local)")
+    p_pu.set_defaults(func=cmd_update_pu)
+
+    # --- todos ---
+    p_todos = subparsers.add_parser("todos", help="Afficher la to-do list d'un deal")
+    p_todos.add_argument("deal", help="Nom du deal")
+    p_todos.add_argument("--all", action="store_true", help="Inclure les items terminés")
+    p_todos.set_defaults(func=cmd_list_todos)
+
+    # --- show-pu ---
+    p_show = subparsers.add_parser("show-pu", help="Afficher le dernier PU d'un deal")
+    p_show.add_argument("deal", help="Nom du deal")
+    p_show.set_defaults(func=cmd_show_pu)
 
     args = parser.parse_args()
 

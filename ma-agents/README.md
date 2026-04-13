@@ -1,6 +1,66 @@
 # MA Agent Factory
 
-Système de création automatique d'agents M&A par un pipeline **Builder → Reviewer**.
+Système d'automatisation M&A avec deux modules :
+1. **Agent Factory** — crée automatiquement des agents M&A via pipeline **Builder → Reviewer**
+2. **Daily PU Runner** — met à jour quotidiennement le Point d'Update et la to-do d'un deal en lisant les mails
+
+---
+
+## Module 2 — Daily PU Runner
+
+Chaque matin, l'agent :
+1. Lit les mails des dernières 24h filtrés par deal
+2. Lit le dernier PU (point d'update)
+3. Raisonne sur ce qui a bougé
+4. Produit un nouveau PU (markdown)
+5. Met à jour la to-do (add / update / close)
+
+```bash
+# Lancer manuellement pour le deal "journey"
+python cli.py update-pu journey --user-email me@corp.com \
+    --keywords journey "project falcon"
+
+# Mode local (sans Outlook) — mails dans un fichier JSON
+python cli.py update-pu journey --local \
+    --emails-file output/emails_journey_20260413.json
+
+# Afficher la to-do actuelle
+python cli.py todos journey
+
+# Afficher le dernier PU
+python cli.py show-pu journey
+```
+
+### Format des mails locaux (fallback sans Outlook)
+
+`ma-agents/output/emails_<deal>_YYYYMMDD.json` :
+```json
+[
+  {
+    "id": "msg-001",
+    "subject": "Re: NDA Journey — dernière version",
+    "sender": "Alice Dupont",
+    "sender_email": "alice@lawfirm.com",
+    "received_at": "2026-04-13T09:15:00Z",
+    "body_text": "Nous avons relu la v3 du NDA, une seule remarque..."
+  }
+]
+```
+
+### Planification (cron / Task Scheduler)
+
+```bash
+# Cron : tous les jours à 7h
+0 7 * * * cd /path/to/ma-agents && python cli.py update-pu journey >> logs/pu.log 2>&1
+```
+
+### Stockage
+- PU quotidiens : `output/pu/<deal>/YYYY-MM-DD.md`
+- To-do persistante : `output/<deal>_todos.json` (avec historique complet)
+
+---
+
+## Module 1 — Agent Factory
 
 ## Concept
 
@@ -72,19 +132,31 @@ python cli.py run nda_agent_20240101.json -o output/mon_nda.md
 ```
 ma-agents/
 ├── cli.py                  # Point d'entrée CLI
+│
+│   ─── Module 1 : Agent Factory ───
 ├── orchestrator.py         # Meta-agent : pipeline complet
 ├── builder_agent.py        # Crée des agents M&A
 ├── reviewer_agent.py       # Évalue et critique les agents
 ├── document_analyzer.py    # Extrait des patterns des exemples
 ├── sharepoint_client.py    # Client SharePoint + fallback local
-├── models.py               # Data models (Pydantic-style)
+│
+│   ─── Module 2 : Daily PU ───
+├── daily_runner.py         # Orchestration du run quotidien
+├── pu_agent.py             # Agent de mise à jour du PU
+├── email_reader.py         # Lecture mails Outlook / local
+├── todo_manager.py         # To-do list persistante
+│
+├── models.py               # Data models
 ├── config.py               # Configuration (env vars)
 ├── agents/                 # Agents générés (JSON)
 ├── templates/              # Exemples locaux par type
 │   ├── nda/
 │   ├── loi/
 │   └── ...
-└── output/                 # Documents générés
+└── output/                 # PUs, to-dos, documents générés
+    ├── pu/
+    │   └── <deal>/YYYY-MM-DD.md
+    └── <deal>_todos.json
 ```
 
 ## Configuration
