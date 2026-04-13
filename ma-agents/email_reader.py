@@ -10,8 +10,12 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-import msal
-import requests
+try:
+    import msal
+    import requests
+except ImportError:
+    msal = None       # type: ignore
+    requests = None   # type: ignore
 
 from config import (
     SHAREPOINT_TENANT_ID,
@@ -64,6 +68,8 @@ class OutlookEmailReader:
         """Client credentials flow (app-only permissions: Mail.Read)."""
         if self._token:
             return self._token
+        if msal is None:
+            raise RuntimeError("msal not installed — use LocalEmailReader or pip install msal requests")
         authority = f"https://login.microsoftonline.com/{self.tenant_id}"
         app = msal.ConfidentialClientApplication(
             self.client_id,

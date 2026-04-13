@@ -1,0 +1,74 @@
+[
+  {
+    "id": "msg-001",
+    "subject": "Journey - DD fiscale : liasses 2023 enfin reçues",
+    "sender": "Elise Martineau",
+    "sender_email": "elise.martineau@journey.io",
+    "received_at": "2026-04-13T07:42:00Z",
+    "body_text": "Bonjour,\n\nBonne nouvelle : j'ai récupéré ce matin les liasses 2023 manquantes (IS, CVAE, CFE) auprès de notre expert-comptable. Je viens de les déposer dans la data room, dossier 3.2 - Fiscal.\n\nLa DD fiscale peut maintenant reprendre son cours. J'ai prévenu KPMG (équipe DD fiscale buy-side) qui confirme pouvoir finaliser son rapport pour le 20/04 au plus tard.\n\nElise",
+    "importance": "high"
+  },
+  {
+    "id": "msg-002",
+    "subject": "URGENT - Journey - Position earn-out",
+    "sender": "Paul Leclerc",
+    "sender_email": "paul@journey.io",
+    "received_at": "2026-04-13T08:15:00Z",
+    "body_text": "Arnaud,\n\nJ'ai relu la proposition de Meridian ce weekend et j'en ai parlé avec mon co-fondateur. Nous sommes prêts à faire un compromis :\n\n- OK pour passer sur un EBITDA ajusté (comme demandé par l'acheteur)\n- MAIS nous voulons que le plafond d'earn-out soit porté de 3M€ à 5M€\n- ET nous voulons définir précisément les ajustements EBITDA dans le SPA (pas de clause floue)\n\nPeux-tu remonter cette proposition au call de demain ? Je pense que c'est notre position de repli ultime.\n\nMerci de me confirmer avant 18h ce soir que tu l'as bien intégrée.\n\nPaul",
+    "importance": "high"
+  },
+  {
+    "id": "msg-003",
+    "subject": "Re: Journey - Lettre de continuité",
+    "sender": "Thomas Rivière",
+    "sender_email": "thomas.riviere@journey.io",
+    "received_at": "2026-04-13T09:30:00Z",
+    "body_text": "Sophie,\n\nJ'ai bien reçu la lettre de continuité hier. Après relecture avec mon avocat personnel, je confirme que je la signe. Je te l'envoie scannée ce matin.\n\nEn revanche, je voulais te signaler que Julie Moreau (CTO) est plus hésitante - elle a des interrogations sur le package de rétention proposé (notamment sur la vesting du bonus de closing). Il faudrait qu'Arnaud ou Paul l'appellent rapidement.\n\nThomas",
+    "importance": "normal"
+  },
+  {
+    "id": "msg-004",
+    "subject": "Journey - SPA v2 : nos contre-propositions",
+    "sender": "Marie Dubois",
+    "sender_email": "mdubois@cliffordchance.com",
+    "received_at": "2026-04-13T10:05:00Z",
+    "body_text": "Cher Arnaud,\n\nSuite à nos échanges de vendredi sur la SPA v2, voici la position de Meridian sur les 47 points ouverts :\n\n1. Sur les 47 commentaires, 32 sont acceptés en l'état\n2. 10 points restent ouverts pour discussion (principalement sur les reps & warranties)\n3. 5 points sont des red flags pour Meridian et ne seront pas bougés\n\nLes 5 red flags concernent :\n- Le cap global des indemnisations (Meridian veut maintenir à 100% du prix)\n- La durée des reps fondamentales (Meridian veut 7 ans, vous proposez 3)\n- Le scope des reps IP (cf. discussion litige ex-employé)\n- La MAC clause (définition proposée jugée trop favorable au vendeur)\n- Le mécanisme d'escrow (montant et durée)\n\nJe propose un call vendredi 15/04 à 10h avec nos équipes respectives pour avancer sur les 10 points ouverts.\n\nPar ailleurs, pouvez-vous confirmer la présence de Paul et Julie au management meeting du 16/04 ? Nos clients (Meridian) seront représentés par Mark Jensen (Managing Partner) et Sarah Chen (Principal).\n\nBien cordialement,\nMarie Dubois\nClifford Chance",
+    "importance": "high"
+  },
+  {
+    "id": "msg-005",
+    "subject": "Journey - Q&A DD fin : réponses batch 3/3",
+    "sender": "Marc Petit",
+    "sender_email": "marc.petit@advisory-firm.com",
+    "received_at": "2026-04-13T11:20:00Z",
+    "body_text": "Team,\n\nJ'ai finalisé les réponses aux 12 questions DD financière restantes. Elles sont dans le dossier partagé (Q&A batch 3). Points saillants :\n\n- Sur les revenus récurrents : j'ai fourni le détail par cohorte client 2023-2025 comme demandé\n- Sur le churn : 4,2% annuel net (confirmé par l'analyse waterfall)\n- Sur les renouvellements : 94% de renewal rate sur les top 50\n\nJ'ai également joint les tableaux MRR, ARR et NRR en format xlsx.\n\nJe considère la DD financière comme complète côté réponses. Il restera à Meridian/KPMG de finaliser leur rapport.\n\nMarc",
+    "importance": "normal"
+  },
+  {
+    "id": "msg-006",
+    "subject": "Journey - Audit IP : premières conclusions Marques & Co",
+    "sender": "Vincent Lambert",
+    "sender_email": "vincent.lambert@marques-co.fr",
+    "received_at": "2026-04-13T14:45:00Z",
+    "body_text": "Bonjour,\n\nSuite à notre mission d'audit IP sur Journey, je souhaite vous faire part de mes premières conclusions (rapport complet sous 5 jours) :\n\n1. Marques : portefeuille solide, 12 marques enregistrées dans les juridictions clés (FR, EU, US). RAS.\n\n2. Brevets : 3 brevets en cours de dépôt en France, aucun en contentieux.\n\n3. Code source : dans la mesure de ce que j'ai pu auditer, le code semble être la propriété exclusive de la société (bon usage des CLA employés et sous-traitants).\n\n4. POINT D'ATTENTION : Le litige en cours avec l'ex-employé Kevin R. (parti en 2023) pose un risque modéré. Sa demande reconventionnelle sur la co-propriété d'un des brevets n'est pas totalement infondée à la première lecture. Je recommande de provisionner ce risque dans les reps IP (disclosure schedule) plutôt que de prétendre à une rep \"clean\".\n\nJe suis disponible pour en discuter. Ce point me semble structurant pour la négociation en cours.\n\nVincent Lambert\nMarques & Co",
+    "importance": "high"
+  },
+  {
+    "id": "msg-007",
+    "subject": "Re: Journey - Management meeting 16/04",
+    "sender": "Sophie Garnier",
+    "sender_email": "sophie.garnier@advisory-firm.com",
+    "received_at": "2026-04-13T16:12:00Z",
+    "body_text": "Team,\n\nLe deck du management meeting est quasi finalisé (45 slides). Il couvre :\n- Partie 1 : Vision & produit (Paul, 20 min)\n- Partie 2 : Go-to-market (Thomas, 15 min)\n- Partie 3 : Tech & roadmap (Julie, 20 min)\n- Partie 4 : Finances & KPI (Marc, 25 min)\n- Q&A (40 min)\n\nIl me manque encore les dernières slides financières de Marc (updated numbers Q1 2026). Je les intègre dès réception.\n\nJ'ai également préparé un doc de Q&A préparatoire avec 30 questions anticipées. Arnaud, peux-tu le relire avant mercredi soir ?\n\nSophie",
+    "importance": "normal"
+  },
+  {
+    "id": "msg-008",
+    "subject": "Journey - Demande additionnelle Meridian (fournisseurs)",
+    "sender": "Sarah Chen",
+    "sender_email": "s.chen@meridiancapital.com",
+    "received_at": "2026-04-13T17:28:00Z",
+    "body_text": "Dear team,\n\nFollowing our internal review, we would like to request additional information regarding Journey's key suppliers and partnerships:\n\n1. Top 10 suppliers with contract terms, annual spend and renewal dates\n2. Detail of hosting / cloud provider contracts (AWS, GCP?) and any exclusivity clauses\n3. Status of partnership agreements with integration partners (Salesforce, HubSpot mentioned)\n4. Any pending supplier disputes or contract renegotiations\n\nWe would appreciate receiving this information by end of week (Friday 18/04) to complete our operational DD.\n\nBest regards,\nSarah Chen\nPrincipal, Meridian Capital",
+    "importance": "high"
+  }
+]

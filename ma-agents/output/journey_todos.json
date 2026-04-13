@@ -1,0 +1,308 @@
+{
+  "deal": "journey",
+  "updated_at": "2026-04-13T10:34:36.280808",
+  "items": [
+    {
+      "id": "journey-001",
+      "title": "Répondre aux 12 Q&A DD financière restantes",
+      "description": "Questions sur revenus récurrents, churn, renouvellements",
+      "owner": "Marc",
+      "status": "done",
+      "priority": "high",
+      "due_date": "2026-04-14",
+      "created_at": "2026-04-10T09:00:00",
+      "updated_at": "2026-04-13T10:34:36.280769",
+      "deal": "journey",
+      "source_email_id": null,
+      "tags": [
+        "dd_finance"
+      ],
+      "history": [
+        {
+          "at": "2026-04-10T09:00:00",
+          "action": "created",
+          "note": ""
+        },
+        {
+          "at": "2026-04-13T10:34:36.280769",
+          "action": "updated",
+          "changes": "status: in_progress → done",
+          "note": "Batch 3/3 livré par Marc : cohortes, churn 4,2%, NRR 94%. DD financière complète côté réponses."
+        }
+      ]
+    },
+    {
+      "id": "journey-002",
+      "title": "Préparer deck management meeting",
+      "description": "45 slides, 4 speakers, Q&A préparatoire",
+      "owner": "Sophie",
+      "status": "in_progress",
+      "priority": "high",
+      "due_date": "2026-04-15",
+      "created_at": "2026-04-09T14:00:00",
+      "updated_at": "2026-04-13T10:34:36.280807",
+      "deal": "journey",
+      "source_email_id": null,
+      "tags": [
+        "management_meeting"
+      ],
+      "history": [
+        {
+          "at": "2026-04-09T14:00:00",
+          "action": "created",
+          "note": ""
+        },
+        {
+          "at": "2026-04-13T10:34:36.280807",
+          "action": "updated",
+          "changes": "",
+          "note": "Deck à 80%. Manque slides Q1 2026 de Marc (à intégrer). Q&A préparatoire prêt, à relire par Arnaud avant mercredi soir."
+        }
+      ]
+    },
+    {
+      "id": "journey-003",
+      "title": "Négocier position earn-out avec Paul",
+      "description": "Désaccord EBITDA ajusté vs ARR, call avocats le 14/04",
+      "owner": "Arnaud",
+      "status": "in_progress",
+      "priority": "urgent",
+      "due_date": "2026-04-14",
+      "created_at": "2026-04-08T11:00:00",
+      "updated_at": "2026-04-13T10:34:36.280774",
+      "deal": "journey",
+      "source_email_id": null,
+      "tags": [
+        "earn_out",
+        "sp a"
+      ],
+      "history": [
+        {
+          "at": "2026-04-08T11:00:00",
+          "action": "created",
+          "note": ""
+        },
+        {
+          "at": "2026-04-13T10:34:36.280774",
+          "action": "updated",
+          "changes": "",
+          "note": "Paul a validé la position de repli : OK EBITDA ajusté mais plafond 5M€ (au lieu de 3M€) et définition stricte des ajustements. À confirmer à Paul avant 18h ce soir."
+        }
+      ]
+    },
+    {
+      "id": "journey-004",
+      "title": "Relancer les 2 KPI pour lettres de continuité",
+      "description": "Thomas Rivière et Julie Moreau",
+      "owner": "Sophie",
+      "status": "in_progress",
+      "priority": "medium",
+      "due_date": null,
+      "created_at": "2026-04-11T10:00:00",
+      "updated_at": "2026-04-13T10:34:36.280777",
+      "deal": "journey",
+      "source_email_id": null,
+      "tags": [
+        "kpi",
+        "retention"
+      ],
+      "history": [
+        {
+          "at": "2026-04-11T10:00:00",
+          "action": "created",
+          "note": ""
+        },
+        {
+          "at": "2026-04-13T10:34:36.280777",
+          "action": "updated",
+          "changes": "status: open → in_progress",
+          "note": "Thomas Rivière a signé. Julie Moreau hésite sur vesting bonus de closing."
+        }
+      ]
+    },
+    {
+      "id": "journey-005",
+      "title": "Draft des reps IP limités au périmètre connu",
+      "description": "Prise en compte du litige ex-employé Kevin R.",
+      "owner": "Clifford-seller",
+      "status": "open",
+      "priority": "urgent",
+      "due_date": null,
+      "created_at": "2026-04-11T15:00:00",
+      "updated_at": "2026-04-13T10:34:36.280799",
+      "deal": "journey",
+      "source_email_id": null,
+      "tags": [
+        "sp a",
+        "reps"
+      ],
+      "history": [
+        {
+          "at": "2026-04-11T15:00:00",
+          "action": "created",
+          "note": ""
+        },
+        {
+          "at": "2026-04-13T10:34:36.280799",
+          "action": "updated",
+          "changes": "priority: medium → urgent",
+          "note": "Audit Marques & Co confirme que le litige Kevin R. (co-propriété brevet) n'est pas totalement infondé. Recommandation : disclosure schedule plutôt que rep clean. Impact direct sur la discussion reps IP."
+        }
+      ]
+    },
+    {
+      "id": "journey-006",
+      "title": "Préparer briefing closing checklist",
+      "description": "",
+      "owner": "Marc",
+      "status": "open",
+      "priority": "low",
+      "due_date": null,
+      "created_at": "2026-04-12T09:00:00",
+      "updated_at": "2026-04-12T09:00:00",
+      "deal": "journey",
+      "source_email_id": null,
+      "tags": [
+        "closing"
+      ],
+      "history": [
+        {
+          "at": "2026-04-12T09:00:00",
+          "action": "created",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "journey-007",
+      "title": "Clôturer la DD fiscale",
+      "description": "Bloqué sur liasses 2023 manquantes",
+      "owner": "Elise",
+      "status": "in_progress",
+      "priority": "high",
+      "due_date": null,
+      "created_at": "2026-04-07T16:00:00",
+      "updated_at": "2026-04-13T10:34:36.280759",
+      "deal": "journey",
+      "source_email_id": null,
+      "tags": [
+        "dd_fiscal"
+      ],
+      "history": [
+        {
+          "at": "2026-04-07T16:00:00",
+          "action": "created",
+          "note": ""
+        },
+        {
+          "at": "2026-04-09T11:00:00",
+          "action": "updated",
+          "changes": "status: in_progress → blocked",
+          "note": "liasses 2023 manquantes côté expert-comptable"
+        },
+        {
+          "at": "2026-04-13T10:34:36.280759",
+          "action": "updated",
+          "changes": "status: blocked → in_progress",
+          "note": "Liasses 2023 reçues (Elise, 13/04 matin). KPMG finalise pour le 20/04."
+        }
+      ]
+    },
+    {
+      "id": "journey-008",
+      "title": "Call urgent Julie Moreau (CTO) sur package de rétention",
+      "description": "Clarifier le vesting du bonus de closing. Risque de perdre un KPI. Thomas Rivière signale qu'elle est hésitante.",
+      "owner": "Arnaud",
+      "status": "open",
+      "priority": "urgent",
+      "due_date": "2026-04-14",
+      "created_at": "2026-04-13T10:34:36.280780",
+      "updated_at": "2026-04-13T10:34:36.280780",
+      "deal": "journey",
+      "source_email_id": "msg-003",
+      "tags": [
+        "kpi",
+        "retention",
+        "cto"
+      ],
+      "history": [
+        {
+          "at": "2026-04-13T10:34:36.280780",
+          "action": "created",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "journey-009",
+      "title": "Préparer call 15/04 sur les 10 points ouverts SPA + 5 red flags",
+      "description": "Red flags à traiter en priorité : cap indemnisations 100%, durée reps fondamentales 7 ans, scope reps IP, MAC clause, mécanisme escrow.",
+      "owner": "Arnaud",
+      "status": "open",
+      "priority": "urgent",
+      "due_date": "2026-04-14",
+      "created_at": "2026-04-13T10:34:36.280788",
+      "updated_at": "2026-04-13T10:34:36.280788",
+      "deal": "journey",
+      "source_email_id": "msg-004",
+      "tags": [
+        "spa",
+        "red_flags"
+      ],
+      "history": [
+        {
+          "at": "2026-04-13T10:34:36.280788",
+          "action": "created",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "journey-010",
+      "title": "Confirmer présence Paul + Julie au management meeting 16/04",
+      "description": "Meridian sera représenté par Mark Jensen (MP) et Sarah Chen (Principal). Confirmer à Marie Dubois (Clifford Chance).",
+      "owner": "Sophie",
+      "status": "open",
+      "priority": "high",
+      "due_date": "2026-04-14",
+      "created_at": "2026-04-13T10:34:36.280792",
+      "updated_at": "2026-04-13T10:34:36.280792",
+      "deal": "journey",
+      "source_email_id": "msg-004",
+      "tags": [
+        "management_meeting"
+      ],
+      "history": [
+        {
+          "at": "2026-04-13T10:34:36.280792",
+          "action": "created",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "journey-011",
+      "title": "Préparer DD opérationnelle fournisseurs (demande Meridian)",
+      "description": "Top 10 fournisseurs (contrats, spend, renouvellements), contrats cloud (AWS/GCP), partenariats (Salesforce, HubSpot), contentieux fournisseurs.",
+      "owner": "Elise",
+      "status": "open",
+      "priority": "high",
+      "due_date": "2026-04-18",
+      "created_at": "2026-04-13T10:34:36.280803",
+      "updated_at": "2026-04-13T10:34:36.280803",
+      "deal": "journey",
+      "source_email_id": "msg-008",
+      "tags": [
+        "dd_ops",
+        "fournisseurs"
+      ],
+      "history": [
+        {
+          "at": "2026-04-13T10:34:36.280803",
+          "action": "created",
+          "note": ""
+        }
+      ]
+    }
+  ]
+}

@@ -189,11 +189,11 @@ class TodoManager:
 
         # Group by status
         groups: dict[TodoStatus, list[TodoItem]] = {
-            TodoStatus.URGENT: [],
             TodoStatus.OPEN: [],
             TodoStatus.IN_PROGRESS: [],
             TodoStatus.BLOCKED: [],
             TodoStatus.DONE: [],
+            TodoStatus.CANCELLED: [],
         }
         for item in items:
             groups.setdefault(item.status, []).append(item)
